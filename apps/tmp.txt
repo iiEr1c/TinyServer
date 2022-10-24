@@ -1,0 +1,62 @@
+void test_object_pool() {
+  ObjectPool<MyClass, 16> pool;
+  std::vector<MyClass *> vec;
+  std::allocator<char> alloc;
+  for (size_t i = 0; i < 8; ++i) {
+    vec.push_back(pool.acquire());
+  }
+  while (!vec.empty()) {
+    pool.release(vec.back());
+    vec.pop_back();
+  }
+}
+
+void test_thread_unsafe_shared_ptr() {
+  MyClass *ptr1 = new MyClass();
+  ThreadUnsafeSharedPtr<MyClass> ptr3(ptr1);
+  ThreadUnsafeSharedPtr<MyClass> ptr4; // use_count 1
+  assert(ptr3.use_count() == 1);
+  ptr4 = ptr3; // use_count 2
+  assert(ptr4.use_count() == 2);
+  auto ptr5 = ptr4; // use_count 3
+  assert(ptr4.use_count() == 3);
+  auto ptr6 = std::move(ptr5); // move use_count 3
+  assert(ptr4.use_count() == 3);
+  ThreadUnsafeSharedPtr<MyClass> ptr7;
+  ptr7 = std::move(ptr6); // move use_count 3
+  assert(ptr4.use_count() == 3);
+
+  ThreadUnsafeWeakPtr<MyClass> ptr8(ptr7);
+  assert(ptr4.use_count() == 3);
+  assert(ptr8.use_count() == 3);
+  auto ptr9 = ptr8.lock();
+  assert(ptr4.use_count() == 4);
+  assert(ptr8.use_count() == 4);
+  ThreadUnsafeWeakPtr<MyClass> ptr10(ptr8);
+  ThreadUnsafeWeakPtr<MyClass> ptr11;
+  ptr11 = ptr10;
+  if (ptr9 != nullptr) {
+    ptr9->func();
+  }
+
+  if (ptr9) {
+    ptr9->func();
+  }
+
+  if (nullptr != ptr9) {
+    ptr9->func();
+  }
+
+  ptr9.get()->func();
+
+  (*ptr9).func();
+}
+
+void test_slot() {
+  std::queue<Slot<MyClass>> que;
+  MyClass *ptr1 = new MyClass();
+  ThreadUnsafeSharedPtr<MyClass> ptr3(ptr1);
+  Slot<MyClass> tmp(ptr3,
+                    [](ThreadUnsafeSharedPtr<MyClass> ptr) { ptr->func(); });
+  que.push(std::move(tmp));
+}
