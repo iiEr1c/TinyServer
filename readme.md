@@ -1,4 +1,22 @@
-# 调用栈
+# 项目介绍
+项目借鉴于muduo网络库, 模型为one loop per thread.
+
+
+# 如何运行
+```shell
+git clone https://github.com/iiEr1c/TinyServer.git
+mkdir build
+cd build
+cmake ..
+make
+```
+
+# 实现的功能
++ 简易json
++ http router, 路由不存在导向404
+
+# 依赖
++ [spdlog日志库](https://github.com/gabime/spdlog)
 
 # wrk压测
 
